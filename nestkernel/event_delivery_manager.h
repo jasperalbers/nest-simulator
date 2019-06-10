@@ -235,6 +235,9 @@ public:
    */
   virtual void reset_timers_counters();
 
+  Stopwatch sw_communicate_spike_data;
+  Stopwatch sw_deliver_spike_data;
+
 private:
   template < typename SpikeDataT >
   void gather_spike_data_( const thread tid,
