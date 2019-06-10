@@ -523,6 +523,12 @@ nest::SimulationManager::run( Time const& t )
     LOG( M_ERROR, "SimulationManager::run", msg );
     throw KernelException();
   }
+#ifdef TIMER
+  if ( kernel().mpi_manager.get_rank() < 30 )
+  {
+    sw_simulate.start();
+  }
+#endif
 
   to_do_ += t.get_steps();
   to_do_total_ = to_do_;
@@ -569,6 +575,13 @@ nest::SimulationManager::run( Time const& t )
   call_update_();
 
   kernel().io_manager.post_run_hook();
+#ifdef TIMER
+  if ( kernel().mpi_manager.get_rank() < 30 )
+  {
+    sw_simulate.stop();
+    sw_simulate.print( "0] Simulate time: " );
+  }
+#endif
 }
 
 void
@@ -953,6 +966,17 @@ nest::SimulationManager::update_()
       Node* node = i->get_node();
       node->update_synaptic_elements( Time( Time::step( clock_.get_steps() + to_step_ ) ).get_ms() );
     }
+
+#ifdef TIMER
+    if ( tid == 0 and kernel().mpi_manager.get_rank() < 30 )
+    {
+      kernel().event_delivery_manager.sw_communicate_spike_data.print(
+        "0] GatherSpikeData::communicate time: " );
+      kernel().event_delivery_manager.sw_deliver_spike_data.print(
+        "0] GatherSpikeData::deliver time: " );
+    }
+#endif
+
   } // of omp parallel
 
   // check if any exceptions have been raised
