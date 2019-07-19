@@ -741,6 +741,13 @@ nest::SimulationManager::update_()
   {
     const thread tid = kernel().vp_manager.get_thread_id();
 
+#ifdef TIMER
+    if ( tid == 0 and kernel().mpi_manager.get_rank() < 30 )
+    {
+      sw_total.start();
+    }
+#endif
+
     do
     {
       if ( print_time_ )
@@ -898,6 +905,12 @@ nest::SimulationManager::update_()
       } // of if(wfr_is_used)
       // end of preliminary update
 
+#ifdef TIMER
+      if ( tid == 0 and kernel().mpi_manager.get_rank() < 30 )
+      {
+        sw_update.start();
+      }
+#endif
       const SparseNodeArray& thread_local_nodes = kernel().node_manager.get_local_nodes( tid );
       for ( SparseNodeArray::const_iterator n = thread_local_nodes.begin(); n != thread_local_nodes.end(); ++n )
       {
@@ -920,6 +933,13 @@ nest::SimulationManager::update_()
 
 // parallel section ends, wait until all threads are done -> synchronize
 #pragma omp barrier
+#ifdef TIMER
+      if ( tid == 0 and kernel().mpi_manager.get_rank() < 30 )
+      {
+        sw_update.stop();
+      }
+#endif
+
       // gather and deliver only at end of slice, i.e., end of min_delay step
       if ( to_step_ == kernel().connection_manager.get_min_delay() )
       {
@@ -970,10 +990,15 @@ nest::SimulationManager::update_()
 #ifdef TIMER
     if ( tid == 0 and kernel().mpi_manager.get_rank() < 30 )
     {
+      sw_total.stop();
+      sw_update.print( "0] Update time: " );
+      kernel().event_delivery_manager.sw_collocate_spike_data.print(
+        "0] GatherSpikeData::collocate time: " );
       kernel().event_delivery_manager.sw_communicate_spike_data.print(
         "0] GatherSpikeData::communicate time: " );
       kernel().event_delivery_manager.sw_deliver_spike_data.print(
         "0] GatherSpikeData::deliver time: " );
+      sw_total.print( "0] Total time: " );
     }
 #endif
 

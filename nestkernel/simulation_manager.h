@@ -192,6 +192,8 @@ private:
                                    //!< relaxation method
 
   Stopwatch sw_simulate;
+  Stopwatch sw_total;
+  Stopwatch sw_update;
 };
 
 inline Time const&
