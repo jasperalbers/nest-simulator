@@ -326,6 +326,12 @@ EventDeliveryManager::gather_spike_data_( const thread tid,
         buffer_size_spike_data_has_changed_ = false;
       }
     } // of omp single; implicit barrier
+#ifdef TIMER
+    if ( tid == 0 and kernel().mpi_manager.get_rank() < 30 )
+    {
+      sw_collocate_spike_data.start();
+    }
+#endif
 
     // Need to get new positions in case buffer size has changed
     SendBufferPosition send_buffer_position(
@@ -362,6 +368,7 @@ EventDeliveryManager::gather_spike_data_( const thread tid,
 #pragma omp single
     {
 #ifdef TIMER
+        sw_collocate_spike_data.stop();
         kernel().mpi_manager.synchronize(); // to get an accurate time measurement
                                             // across ranks
         sw_communicate_spike_data.start();
