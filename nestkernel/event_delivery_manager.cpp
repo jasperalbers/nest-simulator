@@ -450,13 +450,13 @@ EventDeliveryManager::gather_spike_data_( const thread tid,
 
   } // of while
 
-#pragma omp single
-  {
-    if ( decrease_buffer_size_spike_data_ and kernel().mpi_manager.adaptive_spike_buffers() )
-    {
-      kernel().mpi_manager.decrease_buffer_size_spike_data();
-    }
-  } // of omp single; implicit barrier
+// #pragma omp single
+//   {
+//     if ( decrease_buffer_size_spike_data_ and kernel().mpi_manager.adaptive_spike_buffers() )
+//     {
+//       kernel().mpi_manager.decrease_buffer_size_spike_data();
+//     }
+//   } // of omp single; implicit barrier
 
   reset_spike_register_( tid );
 }
