@@ -274,10 +274,10 @@ nest::glif_psc::Parameters_::set( const DictionaryDatum& d )
       throw BadProperty( "Spike induced threshold time constant must be strictly positive." );
     }
 
-    if ( voltage_reset_fraction_ < 0.0 or voltage_reset_fraction_ > 1.0 )
-    {
-      throw BadProperty( "Voltage fraction coefficient following spike must be within [0.0, 1.0]." );
-    }
+    // if ( voltage_reset_fraction_ < 0.0 or voltage_reset_fraction_ > 1.0 )
+    // {
+    //   throw BadProperty( "Voltage fraction coefficient following spike must be within [0.0, 1.0]." );
+    // }
   }
 
   const size_t old_n_receptors = this->n_receptors_();
