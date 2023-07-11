@@ -235,6 +235,10 @@ public:
   typedef STDPFACETSHWHomCommonProperties< targetidentifierT > CommonPropertiesType;
   typedef Connection< targetidentifierT > ConnectionBase;
 
+  static constexpr ConnectionModelProperties properties = ConnectionModelProperties::HAS_DELAY
+    | ConnectionModelProperties::IS_PRIMARY | ConnectionModelProperties::SUPPORTS_HPC
+    | ConnectionModelProperties::SUPPORTS_LBL;
+
   /**
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
@@ -271,7 +275,7 @@ public:
    * Send an event to the receiver of this connection.
    * \param e The event to send
    */
-  void send( Event& e, thread t, const STDPFACETSHWHomCommonProperties< targetidentifierT >& );
+  void send( Event& e, size_t t, const STDPFACETSHWHomCommonProperties< targetidentifierT >& );
 
 
   class ConnTestDummyNode : public ConnTestDummyNodeBase
@@ -280,8 +284,8 @@ public:
     // Ensure proper overriding of overloaded virtual functions.
     // Return values from functions are ignored.
     using ConnTestDummyNodeBase::handles_test_event;
-    port
-    handles_test_event( SpikeEvent&, rport )
+    size_t
+    handles_test_event( SpikeEvent&, size_t ) override
     {
       return invalid_port;
     }
@@ -302,7 +306,7 @@ public:
    * \param receptor_type The ID of the requested receptor type
    */
   void
-  check_connection( Node& s, Node& t, rport receptor_type, const CommonPropertiesType& )
+  check_connection( Node& s, Node& t, size_t receptor_type, const CommonPropertiesType& )
   {
     ConnTestDummyNode dummy_target;
 
@@ -345,6 +349,9 @@ private:
                                  // properties or "static"?
   double t_lastspike_;
 };
+
+template < typename targetidentifierT >
+constexpr ConnectionModelProperties stdp_facetshw_synapse_hom< targetidentifierT >::properties;
 
 template < typename targetidentifierT >
 inline bool
@@ -395,7 +402,7 @@ stdp_facetshw_synapse_hom< targetidentifierT >::lookup_( unsigned int discrete_w
 template < typename targetidentifierT >
 inline void
 stdp_facetshw_synapse_hom< targetidentifierT >::send( Event& e,
-  thread t,
+  size_t t,
   const STDPFACETSHWHomCommonProperties< targetidentifierT >& cp )
 {
   // synapse STDP dynamics
@@ -412,7 +419,7 @@ stdp_facetshw_synapse_hom< targetidentifierT >::send( Event& e,
     const_cast< STDPFACETSHWHomCommonProperties< targetidentifierT >& >( cp );
 
   // init the readout time
-  if ( init_flag_ == false )
+  if ( not init_flag_ )
   {
     synapse_id_ = cp.no_synapses_;
     ++cp_nonconst.no_synapses_;
@@ -433,7 +440,7 @@ stdp_facetshw_synapse_hom< targetidentifierT >::send( Event& e,
     bool eval_1 = eval_function_( a_causal_, a_acausal_, a_thresh_th_, a_thresh_tl_, cp.configbit_1_ );
 
     // select LUT, update weight and reset capacitors
-    if ( eval_0 == true && eval_1 == false )
+    if ( eval_0 == true and eval_1 == false )
     {
       discrete_weight_ = lookup_( discrete_weight_, cp.lookuptable_0_ );
       if ( cp.reset_pattern_[ 0 ] )
@@ -445,7 +452,7 @@ stdp_facetshw_synapse_hom< targetidentifierT >::send( Event& e,
         a_acausal_ = 0;
       }
     }
-    else if ( eval_0 == false && eval_1 == true )
+    else if ( eval_0 == false and eval_1 == true )
     {
       discrete_weight_ = lookup_( discrete_weight_, cp.lookuptable_1_ );
       if ( cp.reset_pattern_[ 2 ] )
@@ -457,7 +464,7 @@ stdp_facetshw_synapse_hom< targetidentifierT >::send( Event& e,
         a_acausal_ = 0;
       }
     }
-    else if ( eval_0 == true && eval_1 == true )
+    else if ( eval_0 == true and eval_1 == true )
     {
       discrete_weight_ = lookup_( discrete_weight_, cp.lookuptable_2_ );
       if ( cp.reset_pattern_[ 4 ] )
