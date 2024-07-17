@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# %%
 #
 # eprop_supervised_regression_handwriting.py
 #
@@ -89,10 +90,8 @@ from IPython.display import Image
 # the input and output of the pattern generation task above, and lists of the required NEST device, neuron, and
 # synapse models below. The connections that must be established are numbered 1 to 6.
 
-try:
-    Image(filename="./eprop_supervised_regression_schematic_handwriting.png")
-except Exception:
-    pass
+Image(filename="./eprop_supervised_regression_schematic_handwriting.png")
+
 
 # %% ###########################################################################################################
 # Setup
@@ -113,7 +112,7 @@ np.random.seed(rng_seed)  # fix numpy random seed
 # The task's temporal structure is then defined, once as time steps and once as durations in milliseconds.
 
 n_batch = 1  # batch size
-n_iter = 5  # number of iterations, 5000 for good convergence
+n_iter = 500  # number of iterations, 5000 for good convergence
 
 data_file_name = "chaos_handwriting.txt"  # name of file with task data
 data = np.loadtxt(data_file_name)
@@ -158,8 +157,9 @@ params_setup = {
     "eprop_update_interval": duration["sequence"],  # ms, time interval for updating the synaptic weights
     "print_time": False,  # if True, print time progress bar during simulation, set False if run as code cell
     "resolution": duration["step"],
-    "total_num_virtual_procs": 1,  # number of virtual processes, set in case of distributed computing
+#     "total_num_virtual_procs": 1,  # number of virtual processes, set in case of distributed computing
     "rng_seed": rng_seed,  # seed for NEST random generator
+    "local_num_threads": 8,
 }
 
 ####################
@@ -612,22 +612,20 @@ def plot_spikes(ax, events, nrns, ylabel, xlims):
 
 
 for xlims in [(0, steps["sequence"]), (steps["task"] - steps["sequence"], steps["task"])]:
-    fig, axs = plt.subplots(12, 1, sharex=True, figsize=(8, 12), gridspec_kw={"hspace": 0.4, "left": 0.2})
+    fig, axs = plt.subplots(10, 1, sharex=True, figsize=(8, 12), gridspec_kw={"hspace": 0.4, "left": 0.2})
 
     plot_spikes(axs[0], events_sr, nrns_in, r"$z_i$" + "\n", xlims)
     plot_spikes(axs[1], events_sr, nrns_rec, r"$z_j$" + "\n", xlims)
 
-    plot_spikes(axs[3], events_sr, nrns_rec, r"$z_j$" + "\n", xlims)
+    plot_recordable(axs[2], events_mm_rec, "V_m", r"$v_j$" + "\n(mV)", xlims)
+    plot_recordable(axs[3], events_mm_rec, "surrogate_gradient", r"$\psi_j$" + "\n", xlims)
+    plot_recordable(axs[4], events_mm_rec, "V_th_adapt", r"$A_j$" + "\n(mV)", xlims)
+    plot_recordable(axs[5], events_mm_rec, "learning_signal", r"$L_j$" + "\n(pA)", xlims)
 
-    plot_recordable(axs[4], events_mm_rec, "V_m", r"$v_j$" + "\n(mV)", xlims)
-    plot_recordable(axs[5], events_mm_rec, "surrogate_gradient", r"$\psi_j$" + "\n", xlims)
-    plot_recordable(axs[6], events_mm_rec, "V_th_adapt", r"$A_j$" + "\n(mV)", xlims)
-    plot_recordable(axs[7], events_mm_rec, "learning_signal", r"$L_j$" + "\n(pA)", xlims)
-
-    plot_recordable(axs[8], events_mm_out, "V_m", r"$v_k$" + "\n(mV)", xlims)
-    plot_recordable(axs[9], events_mm_out, "target_signal", r"$y^*_k$" + "\n", xlims)
-    plot_recordable(axs[10], events_mm_out, "readout_signal", r"$y_k$" + "\n", xlims)
-    plot_recordable(axs[11], events_mm_out, "error_signal", r"$y_k-y^*_k$" + "\n", xlims)
+    plot_recordable(axs[6], events_mm_out, "V_m", r"$v_k$" + "\n(mV)", xlims)
+    plot_recordable(axs[7], events_mm_out, "target_signal", r"$y^*_k$" + "\n", xlims)
+    plot_recordable(axs[8], events_mm_out, "readout_signal", r"$y_k$" + "\n", xlims)
+    plot_recordable(axs[9], events_mm_out, "error_signal", r"$y_k-y^*_k$" + "\n", xlims)
 
     axs[-1].set_xlabel(r"$t$ (ms)")
     axs[-1].set_xlim(*xlims)
@@ -717,3 +715,5 @@ cbar = plt.colorbar(cmesh, cax=axs[1, 1].inset_axes([1.1, 0.2, 0.05, 0.8]), labe
 fig.tight_layout()
 
 plt.show()
+
+# %%

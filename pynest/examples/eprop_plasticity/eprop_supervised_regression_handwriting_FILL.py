@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # %%
 #
-# eprop_supervised_regression_infinite-loop.py
+# eprop_supervised_regression_handwriting.py
 #
 # This file is part of NEST.
 #
@@ -21,10 +21,10 @@
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 
 r"""
-Tutorial on learning to generate an infinite loop with e-prop
+Tutorial on learning to generate handwritten text with e-prop
 -------------------------------------------------------------
 
-Training a regression model using supervised e-prop plasticity to generate an infinite loop
+Training a regression model using supervised e-prop plasticity to generate handwritten text
 
 Description
 ~~~~~~~~~~~
@@ -37,10 +37,10 @@ TensorFlow script given in [2]_ and changed the task as well as the parameters s
 
 
 In this task, the network learns to generate an arbitrary N-dimensional temporal pattern. Here, the network
-learns to reproduce with its overall spiking activity a two-dimensional, roughly two-second-long target signal
-which encode the x and y coordinates of an infinite-loop.
+learns to reproduce with its overall spiking activity a two-dimensional, roughly one-second-long target signal
+which encode the x and y coordinates of the handwritten word "chaos".
 
-.. image:: ../../../../pynest/examples/eprop_plasticity/eprop_supervised_regression_schematic_infinite-loop.png
+.. image:: ../../../../pynest/examples/eprop_plasticity/eprop_supervised_regression_schematic_handwriting.png
    :width: 70 %
    :alt: See Figure 1 below.
    :align: center
@@ -90,7 +90,7 @@ from IPython.display import Image
 # the input and output of the pattern generation task above, and lists of the required NEST device, neuron, and
 # synapse models below. The connections that must be established are numbered 1 to 6.
 
-Image(filename="./eprop_supervised_regression_schematic_infinite-loop.png")
+Image(filename="./eprop_supervised_regression_schematic_handwriting.png")
 
 # %% ###########################################################################################################
 # Setup
@@ -105,18 +105,24 @@ Image(filename="./eprop_supervised_regression_schematic_infinite-loop.png")
 rng_seed = 1  # numpy random seed
 np.random.seed(rng_seed)  # fix numpy random seed
 
+# %%
+n_iter = ...  # number of iterations, 5000 for good convergence
+
 # %% ###########################################################################################################
 # Define timing of task
 # .....................
 # The task's temporal structure is then defined, once as time steps and once as durations in milliseconds.
 
 n_batch = 1  # batch size
-n_iter = 1000  # number of iterations, 5000 for good convergence
+
+data_file_name = "chaos_handwriting.txt"  # name of file with task data
+data = np.loadtxt(data_file_name)
 
 steps = {
-    "sequence": 1258,  # time steps of one full sequence
+    "data_point": 8,  # time steps of one data point
 }
 
+steps["sequence"] = len(data) * steps["data_point"]  # time steps of one full sequence
 steps["learning_window"] = steps["sequence"]  # time steps of window with non-zero learning signals
 steps["task"] = n_iter * n_batch * steps["sequence"]  # time steps of task
 
@@ -147,13 +153,13 @@ duration.update({key: value * duration["step"] for key, value in steps.items()})
 # objects and set some NEST kernel parameters, some of which are e-prop-related.
 
 params_setup = {
-    "eprop_learning_window": duration["learning_window"],
-    "eprop_reset_neurons_on_update": True,  # if True, reset dynamic variables at start of each update interval
-    "eprop_update_interval": duration["sequence"],  # ms, time interval for updating the synaptic weights
-    "print_time": False,  # if True, print time progress bar during simulation, set False if run as code cell
-    "resolution": duration["step"],
-    "total_num_virtual_procs": 8,  # number of virtual processes, set in case of distributed computing
+    "eprop_learning_window": ...,
+    "eprop_reset_neurons_on_update": ...,  # if True, reset dynamic variables at start of each update interval
+    "eprop_update_interval": ...,  # ms, time interval for updating the synaptic weights
+    "print_time": ...,  # if True, print time progress bar during simulation, set False if run as code cell
+    "resolution": ...,
     "rng_seed": rng_seed,  # seed for NEST random generator
+    "local_num_threads": ...,
 }
 
 ####################
@@ -168,8 +174,8 @@ nest.set(**params_setup)
 # Additionally, we already create an input spike generator and an output target rate generator, which we will
 # configure later.
 
-n_in = 100  # number of input neurons
-n_rec = 200  # number of recurrent neurons
+n_in = ...  # number of input neurons
+n_rec = ...  # number of recurrent neurons
 n_out = 2  # number of readout neurons
 
 tau_m_mean = 30.0  # ms, mean of membrane time constant distribution
@@ -209,8 +215,8 @@ params_nrn_out = {
 # Intermediate parrot neurons required between input spike generators and recurrent neurons,
 # since devices cannot establish plastic synapses for technical reasons
 
-gen_spk_in = nest.Create("spike_generator", n_in)
-nrns_in = nest.Create("parrot_neuron", n_in)
+gen_spk_in = ...
+nrns_in = ...
 
 # The suffix _bsshslm_2020 follows the NEST convention to indicate in the model name the paper
 # that introduced it by the first letter of the authors' last names and the publication year.
@@ -323,7 +329,6 @@ params_syn_rec["weight"] = weights_rec_rec
 params_syn_out = params_syn_base.copy()
 params_syn_out["weight"] = weights_rec_out
 
-
 params_syn_feedback = {
     "synapse_model": "eprop_learning_signal_connection_bsshslm_2020",
     "delay": duration["step"],
@@ -352,12 +357,12 @@ params_init_optimizer = {
 
 nest.SetDefaults("eprop_synapse_bsshslm_2020", params_common_syn_eprop)
 
-nest.Connect(gen_spk_in, nrns_in, params_conn_one_to_one, params_syn_static)  # connection 1
-nest.Connect(nrns_in, nrns_rec, params_conn_all_to_all, params_syn_in)  # connection 2
-nest.Connect(nrns_rec, nrns_rec, params_conn_all_to_all, params_syn_rec)  # connection 3
-nest.Connect(nrns_rec, nrns_out, params_conn_all_to_all, params_syn_out)  # connection 4
-nest.Connect(nrns_out, nrns_rec, params_conn_all_to_all, params_syn_feedback)  # connection 5
-nest.Connect(gen_rate_target, nrns_out, params_conn_one_to_one, params_syn_rate_target)  # connection 6
+nest.Connect(...)  # connection 1
+nest.Connect(...)  # connection 2
+nest.Connect(...)  # connection 3
+nest.Connect(...)  # connection 4
+nest.Connect(...)  # connection 5
+nest.Connect(...)  # connection 6
 
 nest.Connect(nrns_in + nrns_rec, sr, params_conn_all_to_all, params_syn_static)
 
@@ -397,13 +402,17 @@ nest.SetStatus(gen_spk_in, params_gen_spk_in)
 # Create output
 # ~~~~~~~~~~~~~
 # Then, we load the x and y values of an image of the word "chaos" written by hand and construct a roughly
-# one-second long target signal from it. This signal, like the input, is repeated for all iterations and fed
+# two-second long target signal from it. This signal, like the input, is repeated for all iterations and fed
 # into the rate generator that was previously created.
 
-target_signal_list = [
-    np.sin(np.linspace(0.0, 2.0 * np.pi, steps["sequence"])),
-    np.sin(np.linspace(0.0, 4.0 * np.pi, steps["sequence"])),
-]
+x_eval = np.arange(steps["sequence"]) / steps["data_point"]
+x_data = np.arange(steps["sequence"] // steps["data_point"])
+
+target_signal_list = []
+for y_data in np.cumsum(data, axis=0).T:
+    y_data /= np.max(np.abs(y_data))
+    y_data -= np.mean(y_data)
+    target_signal_list.append(np.interp(x_eval, x_data, y_data))
 
 params_gen_rate_target = []
 
@@ -461,7 +470,7 @@ weights_pre_train = {
 # We train the network by simulating for a set simulation time, determined by the number of iterations and the
 # batch size and the length of one sequence.
 
-nest.Simulate(duration["sim"])
+...
 
 # %% ###########################################################################################################
 # Read out post-training weights
@@ -501,7 +510,6 @@ for sender in set(senders):
     loss_list.append(0.5 * np.add.reduceat(error, np.arange(0, steps["task"], steps["sequence"])))
 
 loss = np.sum(loss_list, axis=0)
-
 
 # %% ###########################################################################################################
 # Plot results
@@ -574,9 +582,6 @@ ax.xaxis.get_major_locator().set_params(integer=True)
 ax.legend(bbox_to_anchor=(1.01, 0.5), loc="center left")
 fig.tight_layout()
 
-# %%
-steps["task"]
-
 # %% ###########################################################################################################
 # Plot spikes and dynamic variables
 # .................................
@@ -611,7 +616,6 @@ for xlims in [(0, steps["sequence"]), (steps["task"] - steps["sequence"], steps[
 
     plot_spikes(axs[0], events_sr, nrns_in, r"$z_i$" + "\n", xlims)
     plot_spikes(axs[1], events_sr, nrns_rec, r"$z_j$" + "\n", xlims)
-
     plot_recordable(axs[2], events_mm_rec, "V_m", r"$v_j$" + "\n(mV)", xlims)
     plot_recordable(axs[3], events_mm_rec, "surrogate_gradient", r"$\psi_j$" + "\n", xlims)
     plot_recordable(axs[4], events_mm_rec, "V_th_adapt", r"$A_j$" + "\n(mV)", xlims)

@@ -105,13 +105,15 @@ Image(filename="./eprop_supervised_regression_schematic_infinite-loop.png")
 rng_seed = 1  # numpy random seed
 np.random.seed(rng_seed)  # fix numpy random seed
 
+# %%
+n_iter = ...  # number of iterations, 5000 for good convergence
+
 # %% ###########################################################################################################
 # Define timing of task
 # .....................
 # The task's temporal structure is then defined, once as time steps and once as durations in milliseconds.
 
 n_batch = 1  # batch size
-n_iter = 1000  # number of iterations, 5000 for good convergence
 
 steps = {
     "sequence": 1258,  # time steps of one full sequence
@@ -147,13 +149,13 @@ duration.update({key: value * duration["step"] for key, value in steps.items()})
 # objects and set some NEST kernel parameters, some of which are e-prop-related.
 
 params_setup = {
-    "eprop_learning_window": duration["learning_window"],
-    "eprop_reset_neurons_on_update": True,  # if True, reset dynamic variables at start of each update interval
-    "eprop_update_interval": duration["sequence"],  # ms, time interval for updating the synaptic weights
-    "print_time": False,  # if True, print time progress bar during simulation, set False if run as code cell
-    "resolution": duration["step"],
-    "total_num_virtual_procs": 8,  # number of virtual processes, set in case of distributed computing
+    "eprop_learning_window": ...,
+    "eprop_reset_neurons_on_update": ...,  # if True, reset dynamic variables at start of each update interval
+    "eprop_update_interval": ...,  # ms, time interval for updating the synaptic weights
+    "print_time": ...,  # if True, print time progress bar during simulation, set False if run as code cell
+    "resolution": ...,
     "rng_seed": rng_seed,  # seed for NEST random generator
+    "total_num_virtual_procs": ...,  # number of virtual processes, set in case of distributed computing
 }
 
 ####################
@@ -168,8 +170,8 @@ nest.set(**params_setup)
 # Additionally, we already create an input spike generator and an output target rate generator, which we will
 # configure later.
 
-n_in = 100  # number of input neurons
-n_rec = 200  # number of recurrent neurons
+n_in = ...  # number of input neurons
+n_rec = ...  # number of recurrent neurons
 n_out = 2  # number of readout neurons
 
 tau_m_mean = 30.0  # ms, mean of membrane time constant distribution
@@ -209,8 +211,8 @@ params_nrn_out = {
 # Intermediate parrot neurons required between input spike generators and recurrent neurons,
 # since devices cannot establish plastic synapses for technical reasons
 
-gen_spk_in = nest.Create("spike_generator", n_in)
-nrns_in = nest.Create("parrot_neuron", n_in)
+gen_spk_in = ...
+nrns_in = ...
 
 # The suffix _bsshslm_2020 follows the NEST convention to indicate in the model name the paper
 # that introduced it by the first letter of the authors' last names and the publication year.
@@ -352,12 +354,12 @@ params_init_optimizer = {
 
 nest.SetDefaults("eprop_synapse_bsshslm_2020", params_common_syn_eprop)
 
-nest.Connect(gen_spk_in, nrns_in, params_conn_one_to_one, params_syn_static)  # connection 1
-nest.Connect(nrns_in, nrns_rec, params_conn_all_to_all, params_syn_in)  # connection 2
-nest.Connect(nrns_rec, nrns_rec, params_conn_all_to_all, params_syn_rec)  # connection 3
-nest.Connect(nrns_rec, nrns_out, params_conn_all_to_all, params_syn_out)  # connection 4
-nest.Connect(nrns_out, nrns_rec, params_conn_all_to_all, params_syn_feedback)  # connection 5
-nest.Connect(gen_rate_target, nrns_out, params_conn_one_to_one, params_syn_rate_target)  # connection 6
+nest.Connect(...)  # connection 1
+nest.Connect(...)  # connection 2
+nest.Connect(...)  # connection 3
+nest.Connect(...)  # connection 4
+nest.Connect(...)  # connection 5
+nest.Connect(...)  # connection 6
 
 nest.Connect(nrns_in + nrns_rec, sr, params_conn_all_to_all, params_syn_static)
 
@@ -401,8 +403,8 @@ nest.SetStatus(gen_spk_in, params_gen_spk_in)
 # into the rate generator that was previously created.
 
 target_signal_list = [
-    np.sin(np.linspace(0.0, 2.0 * np.pi, steps["sequence"])),
-    np.sin(np.linspace(0.0, 4.0 * np.pi, steps["sequence"])),
+    ...,
+    ...,
 ]
 
 params_gen_rate_target = []
@@ -461,7 +463,7 @@ weights_pre_train = {
 # We train the network by simulating for a set simulation time, determined by the number of iterations and the
 # batch size and the length of one sequence.
 
-nest.Simulate(duration["sim"])
+...
 
 # %% ###########################################################################################################
 # Read out post-training weights
@@ -573,9 +575,6 @@ ax.set_xlim(1, n_iter)
 ax.xaxis.get_major_locator().set_params(integer=True)
 ax.legend(bbox_to_anchor=(1.01, 0.5), loc="center left")
 fig.tight_layout()
-
-# %%
-steps["task"]
 
 # %% ###########################################################################################################
 # Plot spikes and dynamic variables

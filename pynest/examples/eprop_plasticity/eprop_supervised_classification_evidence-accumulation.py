@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# %%
 #
 # eprop_supervised_classification_evidence-accumulation.py
 #
@@ -91,10 +92,7 @@ from IPython.display import Image
 # the input and output of the pattern generation task above, and lists of the required NEST device, neuron, and
 # synapse models below. The connections that must be established are numbered 1 to 7.
 
-try:
-    Image(filename="./eprop_supervised_classification_schematic_evidence-accumulation.png")
-except Exception:
-    pass
+Image(filename="./eprop_supervised_classification_schematic_evidence-accumulation.png")
 
 # %% ###########################################################################################################
 # Setup
@@ -116,8 +114,8 @@ np.random.seed(rng_seed)  # fix numpy random seed
 # Using a batch size larger than one aids the network in generalization, facilitating the solution to this task.
 # The original number of iterations requires distributed computing.
 
-n_batch = 1  # batch size, 64 in reference [2], 32 in the README to reference [2]
-n_iter = 5  # number of iterations, 2000 in reference [2], 50 with n_batch 32 converges
+n_batch = 8  # batch size, 64 in reference [2], 32 in the README to reference [2]
+n_iter = 1000  # number of iterations, 2000 in reference [2], 50 with n_batch 32 converges
 
 n_input_symbols = 4  # number of input populations, e.g. 4 = left, right, recall, noise
 n_cues = 7  # number of cues given before decision
@@ -167,7 +165,8 @@ params_setup = {
     "eprop_update_interval": duration["sequence"],  # ms, time interval for updating the synaptic weights
     "print_time": False,  # if True, print time progress bar during simulation, set False if run as code cell
     "resolution": duration["step"],
-    "total_num_virtual_procs": 1,  # number of virtual processes, set in case of distributed computing
+#     "total_num_virtual_procs": 1,  # number of virtual processes, set in case of distributed computing
+    "local_num_threads": 8,
 }
 
 ####################
@@ -787,3 +786,5 @@ cbar = plt.colorbar(cmesh, cax=axs[1, 1].inset_axes([1.1, 0.2, 0.05, 0.8]), labe
 fig.tight_layout()
 
 plt.show()
+
+# %%

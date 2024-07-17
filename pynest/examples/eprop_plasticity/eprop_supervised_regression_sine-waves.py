@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# %%
 #
 # eprop_supervised_regression_sine-waves.py
 #
@@ -85,10 +86,7 @@ from IPython.display import Image
 # the input and output of the pattern generation task above, and lists of the required NEST device, neuron, and
 # synapse models below. The connections that must be established are numbered 1 to 6.
 
-try:
-    Image(filename="./eprop_supervised_regression_schematic_sine-waves.png")
-except Exception:
-    pass
+Image(filename="./eprop_supervised_regression_schematic_sine-waves.png")
 
 # %% ###########################################################################################################
 # Setup
@@ -109,7 +107,7 @@ np.random.seed(rng_seed)  # fix numpy random seed
 # The task's temporal structure is then defined, once as time steps and once as durations in milliseconds.
 
 n_batch = 1  # batch size, 1 in reference [2]
-n_iter = 5  # number of iterations, 2000 in reference [2]
+n_iter = 1000  # number of iterations, 2000 in reference [2]
 
 steps = {
     "sequence": 1000,  # time steps of one full sequence
@@ -150,7 +148,7 @@ params_setup = {
     "eprop_update_interval": duration["sequence"],  # ms, time interval for updating the synaptic weights
     "print_time": False,  # if True, print time progress bar during simulation, set False if run as code cell
     "resolution": duration["step"],
-    "total_num_virtual_procs": 1,  # number of virtual processes, set in case of distributed computing
+    "total_num_virtual_procs": 8,  # number of virtual processes, set in case of distributed computing
 }
 
 ####################
@@ -646,3 +644,5 @@ cbar = plt.colorbar(cmesh, cax=axs[1, 1].inset_axes([1.1, 0.2, 0.05, 0.8]), labe
 fig.tight_layout()
 
 plt.show()
+
+# %%
