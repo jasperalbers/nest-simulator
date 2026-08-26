@@ -315,7 +315,7 @@ jobs:
 
       - name: "Install dependencies"
         run: |
-          pip install mypy matplotlib numpy "scipy!=1.18.0" data-science-types
+          pip install mypy matplotlib numpy "scipy<1.18" data-science-types
 
       - name: "Run mypy..."
         run: |
