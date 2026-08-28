@@ -45,10 +45,6 @@ function( NEST_PROCESS_WITH_DEBUG )
   endif ()
 endfunction()
 
-function( NEST_PROCESS_WITH_STD )
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=${with-cpp-std}" PARENT_SCOPE )
-endfunction()
-
 function( NEST_PROCESS_WITH_INTEL_COMPILER_FLAGS )
   if ( NOT with-intel-compiler-flags )
     set( with-intel-compiler-flags "-fp-model strict" )
@@ -123,19 +119,9 @@ function( NEST_PROCESS_WITH_DEFINES )
 endfunction()
 
 function( NEST_GET_COLOR_FLAGS )
-    set( NEST_C_COLOR_FLAGS "" PARENT_SCOPE )
     set( NEST_CXX_COLOR_FLAGS "" PARENT_SCOPE )
-
-    # add colored output from gcc
-    if ( CMAKE_C_COMPILER_ID STREQUAL "GNU" )
-      if ( NOT CMAKE_C_COMPILER_VERSION VERSION_LESS "4.9" )
-        set( NEST_C_COLOR_FLAGS "-fdiagnostics-color=auto" PARENT_SCOPE )
-      endif ()
-    endif ()
     if ( CMAKE_CXX_COMPILER_ID STREQUAL "GNU" )
-      if ( NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "4.9" )
         set( NEST_CXX_COLOR_FLAGS "-fdiagnostics-color=auto" PARENT_SCOPE )
-      endif ()
     endif ()
 endfunction()
 
@@ -143,18 +129,14 @@ function( NEST_PROCESS_STATIC_LIBRARIES )
   # build static or shared libraries
   if ( static-libraries )
 
-    if ( with-readline )
-      printError( "-Dstatic-libraries=ON requires -Dwith-readline=OFF" )
-    endif ()
-
     set( BUILD_SHARED_LIBS OFF PARENT_SCOPE )
     # set RPATH stuff
     set( CMAKE_SKIP_RPATH TRUE PARENT_SCOPE )
 
     if ( UNIX OR APPLE )
-      # On Linux .a is the static library suffix, on Mac OS X .lib can also
-      # be used, so we'll add both to the preference list.
-      set( CMAKE_FIND_LIBRARY_SUFFIXES ".a;.lib;.dylib;.so" PARENT_SCOPE )
+      # On Linux .a is the static library suffix, on macOS .lib can also
+      # be used, so we'll add both to the preference list. macOS also uses .tbd.
+      set( CMAKE_FIND_LIBRARY_SUFFIXES ".a;.lib;.dylib;.tbd;.so" PARENT_SCOPE )
     endif ()
 
     if ( Fugaku )
@@ -181,9 +163,8 @@ function( NEST_PROCESS_STATIC_LIBRARIES )
 
     # Note: "$ORIGIN" (on Linux) and "@loader_path" (on MacOS) are not CMake variables, but special keywords for the
     # Linux resp. the macOS dynamic loader. They refer to the path in which the object is located, e.g.
-    # ``${CMAKE_INSTALL_PREFIX}/bin`` for the nest and sli executables, ``${CMAKE_INSTALL_PREFIX}/lib/nest`` for all
-    # dynamic libraries except PyNEST (libnestkernel.so, etc.), and  something like
-    # ``${CMAKE_INSTALL_PREFIX}/lib/python3.x/site-packages/nest`` for ``pynestkernel.so``. The RPATH is relative to
+    # ``${CMAKE_INSTALL_PREFIX}/bin`` for helper scripts and  something like
+# ``${CMAKE_INSTALL_PREFIX}/lib/python3.x/site-packages/nest`` for ``nestkernel_api.so``. The RPATH is relative to
     # this origin, so the binary ``bin/nest`` can find the files in the relative location ``../lib/nest``, and
     # similarly for PyNEST and the other libraries. For simplicity, we set all the possibilities on all generated
     # objects.
@@ -217,7 +198,7 @@ function( NEST_PROCESS_STATIC_LIBRARIES )
 
     if ( UNIX OR APPLE )
       # reverse the search order for lib extensions
-      set( CMAKE_FIND_LIBRARY_SUFFIXES ".so;.dylib;.a;.lib" PARENT_SCOPE )
+      set( CMAKE_FIND_LIBRARY_SUFFIXES ".so;.dylib;.tbd;.a;.lib" PARENT_SCOPE )
     endif ()
   endif ()
 endfunction()
@@ -241,7 +222,7 @@ function( NEST_PROCESS_WITH_LIBLTDL )
   # Only find libLTDL if we link dynamically
   set( HAVE_LIBLTDL OFF PARENT_SCOPE )
   if ( with-ltdl AND NOT static-libraries )
-    if ( NOT ${with-ltdl} STREQUAL "ON" )
+    if ( NOT "${with-ltdl}" STREQUAL "ON" )
       # a path is set
       set( LTDL_ROOT "${with-ltdl}" )
     endif ()
@@ -261,52 +242,32 @@ function( NEST_PROCESS_WITH_LIBLTDL )
   endif ()
 endfunction()
 
-function( NEST_PROCESS_WITH_READLINE )
-  # Find readline
-  set( HAVE_READLINE OFF PARENT_SCOPE )
-  if ( with-readline )
-    if ( NOT ${with-readline} STREQUAL "ON" )
-      # a path is set
-      set( Readline_ROOT "${with-readline}" )
-    endif ()
-
-    find_package( Readline )
-    if ( READLINE_FOUND )
-      set( HAVE_READLINE ON PARENT_SCOPE )
-      # export found variables to parent scope
-      set( READLINE_FOUND "${READLINE_FOUND}" PARENT_SCOPE )
-      set( READLINE_LIBRARIES "${READLINE_LIBRARIES}" PARENT_SCOPE )
-      set( READLINE_INCLUDE_DIRS "${READLINE_INCLUDE_DIRS}" PARENT_SCOPE )
-      set( READLINE_VERSION "${READLINE_VERSION}" PARENT_SCOPE )
-
-      include_directories( ${READLINE_INCLUDE_DIRS} )
-      # is linked in sli/CMakeLists.txt
-    endif ()
-  endif ()
-endfunction()
-
 function( NEST_PROCESS_WITH_GSL )
   # Find GSL
   set( HAVE_GSL OFF PARENT_SCOPE )
   if ( with-gsl )
-    if ( NOT ${with-gsl} STREQUAL "ON" )
+    if ( NOT "${with-gsl}" STREQUAL "ON" )
       # if set, use this prefix
-      set( GSL_ROOT "${with-gsl}" )
+      set( GSL_ROOT_DIR "${with-gsl}" )
     endif ()
 
-    find_package( GSL 1.11 )
+    find_package( GSL 1.11 REQUIRED )
 
     if ( GSL_FOUND )
       set( HAVE_GSL ON PARENT_SCOPE )
 
-      # export found variables to parent scope
+      # export variables needed for nest-config generation
       set( GSL_VERSION "${GSL_VERSION}" PARENT_SCOPE )
       set( GSL_LIBRARIES "${GSL_LIBRARIES}" PARENT_SCOPE )
       set( GSL_INCLUDE_DIRS "${GSL_INCLUDE_DIRS}" PARENT_SCOPE )
-
-      include_directories( ${GSL_INCLUDE_DIRS} )
-      # is linked in libnestutil/CMakeLists.txt
+      # consumers use GSL::gsl imported target; no global include_directories() needed
     endif ()
+  endif ()
+
+  # Provide a dummy GSL::gsl if GSL is disabled. Needed to avoid problems
+  # where GSL::gsl is used unconditionally.
+  if ( NOT TARGET GSL::gsl )
+    add_library( GSL::gsl INTERFACE IMPORTED )
   endif ()
 endfunction()
 
@@ -314,7 +275,7 @@ function( NEST_PROCESS_WITH_PYTHON )
   # Find Python
   set( HAVE_PYTHON OFF PARENT_SCOPE )
 
-  if ( ${with-python} STREQUAL "ON" )
+  if ( "${with-python}" STREQUAL "ON" )
 
     # Localize the Python interpreter and ABI
     find_package( Python 3.8 QUIET COMPONENTS Interpreter Development.Module )
@@ -333,7 +294,7 @@ function( NEST_PROCESS_WITH_PYTHON )
     if ( Python_FOUND )
       if ( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
         execute_process( COMMAND "${Python_EXECUTABLE}" "-c"
-          "import sys, os; print(int(bool(os.environ.get('CONDA_DEFAULT_ENV', False)) or (sys.prefix != sys.base_prefix)))"
+          "import sys, os; print(int(bool(os.environ.get('VIRTUAL_ENV', False)) or bool(os.environ.get('CONDA_DEFAULT_ENV', False)) or (sys.prefix != sys.base_prefix)))"
           OUTPUT_VARIABLE Python_InVirtualEnv OUTPUT_STRIP_TRAILING_WHITESPACE )
 
         if ( NOT Python_InVirtualEnv AND CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
@@ -359,7 +320,7 @@ function( NEST_PROCESS_WITH_PYTHON )
 
       if ( cythonize-pynest )
         # Need updated Cython because of a change in the C api in Python 3.7
-        find_package( Cython 0.28.3 REQUIRED )
+        find_package( Cython 3.0.0 REQUIRED )
         if ( CYTHON_FOUND )
           # export found variables to parent scope
           set( CYTHON_FOUND "${CYTHON_FOUND}" PARENT_SCOPE )
@@ -368,7 +329,7 @@ function( NEST_PROCESS_WITH_PYTHON )
         endif ()
       endif ()
     endif ()
-  elseif ( ${with-python} STREQUAL "OFF" )
+  elseif ( "${with-python}" STREQUAL "OFF" )
   else ()
     printError( "Invalid value -Dwith-python=${with-python}, please use 'ON' or 'OFF'" )
   endif ()
@@ -386,19 +347,30 @@ function( NEST_PROCESS_WITH_OPENMP )
     if ( NOT "${with-openmp}" STREQUAL "ON" )
       # if set, use this prefix
       set( OpenMP_ROOT "${with-openmp}" )
+    elseif ( APPLE )
+      # Apple Clang does not bundle libomp; if installed via Homebrew,
+      # locate it and use it as an additional search hint.
+      execute_process(
+        COMMAND brew --prefix libomp
+        OUTPUT_VARIABLE _brew_libomp_prefix
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+        RESULT_VARIABLE _brew_result
+      )
+      if ( _brew_result EQUAL 0 AND EXISTS "${_brew_libomp_prefix}" )
+        set( OpenMP_ROOT "${_brew_libomp_prefix}" )
+      endif ()
     endif ()
 
-    find_package( OpenMP REQUIRED )
+    find_package( OpenMP REQUIRED QUIET )
 
     if ( OpenMP_FOUND )
-      # export found variables to parent scope
+      message( STATUS "Found OpenMP: ${OpenMP_CXX_FLAGS} (found version ${OpenMP_VERSION})" )
       set( OpenMP_FOUND "${OpenMP_FOUND}" PARENT_SCOPE )
-      set( OpenMP_C_FLAGS "${OpenMP_C_FLAGS}" PARENT_SCOPE )
       set( OpenMP_CXX_FLAGS "${OpenMP_CXX_FLAGS}" PARENT_SCOPE )
       set( OpenMP_CXX_LIBRARIES "${OpenMP_CXX_LIBRARIES}" PARENT_SCOPE )
-      # set flags
-      set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}" PARENT_SCOPE )
-      set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}" PARENT_SCOPE )
+      set( OpenMP_CXX_INCLUDE_DIRS "${OpenMP_CXX_INCLUDE_DIRS}" PARENT_SCOPE )
+      # consumers use OpenMP::OpenMP_CXX imported target
     else()
       printError( "CMake can not find OpenMP." )
     endif ()
@@ -416,28 +388,16 @@ function( NEST_PROCESS_WITH_MPI )
   # Find MPI
   set( HAVE_MPI OFF PARENT_SCOPE )
   if ( NOT "${with-mpi}" STREQUAL "OFF" )
-    if ( NOT ${with-mpi} STREQUAL "ON" )
+    if ( NOT "${with-mpi}" STREQUAL "ON" )
       # if set, use this prefix
       set( MPI_ROOT "${with-mpi}" )
     endif ()
-    find_package( MPI REQUIRED )
+    find_package( MPI REQUIRED QUIET )
     if ( MPI_CXX_FOUND )
+      message( STATUS "Found MPI: ${MPI_CXX_COMPILER}  (supports MPI standard ${MPI_CXX_VERSION}) " )
       set( HAVE_MPI ON PARENT_SCOPE )
 
-      set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${MPI_C_COMPILE_FLAGS}" PARENT_SCOPE )
-      set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}" PARENT_SCOPE )
-
-      set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}" PARENT_SCOPE )
-      include_directories( ${MPI_CXX_INCLUDE_PATH} )
-      # is linked in nestkernel/CMakeLists.txt
-
-      # export found variables to parent scope
-      set( MPI_C_FOUND "${MPI_C_FOUND}" PARENT_SCOPE )
-      set( MPI_C_COMPILER "${MPI_C_COMPILER}" PARENT_SCOPE )
-      set( MPI_C_COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}" PARENT_SCOPE )
-      set( MPI_C_INCLUDE_PATH "${MPI_C_INCLUDE_PATH}" PARENT_SCOPE )
-      set( MPI_C_LINK_FLAGS "${MPI_C_LINK_FLAGS}" PARENT_SCOPE )
-      set( MPI_C_LIBRARIES "${MPI_C_LIBRARIES}" PARENT_SCOPE )
+      # export variables needed for nest-config generation and ConfigureSummary
       set( MPI_CXX_FOUND "${MPI_CXX_FOUND}" PARENT_SCOPE )
       set( MPI_CXX_COMPILER "${MPI_CXX_COMPILER}" PARENT_SCOPE )
       set( MPI_CXX_COMPILE_FLAGS "${MPI_CXX_COMPILE_FLAGS}" PARENT_SCOPE )
@@ -448,27 +408,44 @@ function( NEST_PROCESS_WITH_MPI )
       set( MPIEXEC_NUMPROC_FLAG "${MPIEXEC_NUMPROC_FLAG}" PARENT_SCOPE )
       set( MPIEXEC_PREFLAGS "${MPIEXEC_PREFLAGS}" PARENT_SCOPE )
       set( MPIEXEC_POSTFLAGS "${MPIEXEC_POSTFLAGS}" PARENT_SCOPE )
+      # consumers use MPI::MPI_CXX imported target
     endif ()
+  endif ()
+
+  # Provide a dummy MPI::MPI_CXX if MPI is disabled. Needed to avoid
+  # problems where MPI::MPI_CXX is used unconditionally.
+  if ( NOT TARGET MPI::MPI_CXX )
+    add_library( MPI::MPI_CXX INTERFACE IMPORTED )
   endif ()
 endfunction()
 
 function( NEST_PROCESS_WITH_DETAILED_TIMERS )
   set( TIMER_DETAILED OFF PARENT_SCOPE )
-  if ( ${with-detailed-timers} STREQUAL "ON" )
+  if ( "${with-detailed-timers}" STREQUAL "ON" )
     set( TIMER_DETAILED ON PARENT_SCOPE )
   endif ()
 endfunction()
 
+function(NEST_PROCESS_WITH_CYCLE_TIMERS)
+  set(CYCLE_TIMERS OFF PARENT_SCOPE)
+  if ("${with-detailed-timers}" STREQUAL "ON" AND "${with-cycle-timers}"   STREQUAL "ON")
+    set(CYCLE_TIMERS ON PARENT_SCOPE)
+  endif()
+  if ("${with-cycle-timers}" STREQUAL "ON" AND NOT "${with-detailed-timers}" STREQUAL "ON")
+    message(FATAL_ERROR "To enable cycle timers, you must also enable detailed timers")
+  endif()
+endfunction()
+
 function( NEST_PROCESS_WITH_THREADED_TIMERS )
   set( THREADED_TIMERS OFF PARENT_SCOPE )
-  if ( ${with-threaded-timers} STREQUAL "ON" )
+  if ( "${with-threaded-timers}" STREQUAL "ON" )
     set( THREADED_TIMERS ON PARENT_SCOPE )
   endif ()
 endfunction()
 
 function( NEST_PROCESS_WITH_MPI_SYNC_TIMER )
   set( MPI_SYNC_TIMER OFF PARENT_SCOPE )
-  if ( ${with-mpi-sync-timer} STREQUAL "ON" )
+  if ( "${with-mpi-sync-timer}" STREQUAL "ON" )
     set( MPI_SYNC_TIMER ON PARENT_SCOPE )
   endif ()
 endfunction()
@@ -477,7 +454,7 @@ function( NEST_PROCESS_WITH_LIBNEUROSIM )
   # Find libneurosim
   set( HAVE_LIBNEUROSIM OFF PARENT_SCOPE )
   if ( with-libneurosim )
-    if ( NOT ${with-libneurosim} STREQUAL "ON" )
+    if ( NOT "${with-libneurosim}" STREQUAL "ON" )
       # a path is set
       set( LibNeurosim_ROOT ${with-libneurosim} )
     endif ()
@@ -501,7 +478,7 @@ function( NEST_PROCESS_WITH_MUSIC )
   # Find music
   set( HAVE_MUSIC OFF PARENT_SCOPE )
   if ( with-music )
-    if ( NOT ${with-music} STREQUAL "ON" )
+    if ( NOT "${with-music}" STREQUAL "ON" )
       # a path is set
       set( Music_ROOT "${with-music}" )
     endif ()
@@ -528,7 +505,7 @@ endfunction()
 function( NEST_PROCESS_WITH_SIONLIB )
   set( HAVE_SIONLIB OFF )
   if ( with-sionlib )
-    if ( NOT ${with-sionlib} STREQUAL "ON" )
+    if ( NOT "${with-sionlib}" STREQUAL "ON" )
       set( SIONlib_ROOT "${with-sionlib}" CACHE INTERNAL "sionlib" )
     endif()
 
@@ -550,7 +527,7 @@ function( NEST_PROCESS_WITH_BOOST )
   # Find Boost
   set( HAVE_BOOST OFF PARENT_SCOPE )
   if ( with-boost )
-    if ( NOT ${with-boost} STREQUAL "ON" )
+    if ( NOT "${with-boost}" STREQUAL "ON" )
       # a path is set
       set( Boost_ROOT "${with-boost}" )
     endif ()
@@ -562,16 +539,17 @@ function( NEST_PROCESS_WITH_BOOST )
     # Require Boost version >=1.70.0 due to change in package finding
     find_package( Boost 1.70 CONFIG )
     if ( Boost_FOUND )
-      # export found variables to parent scope
+      message( STATUS "Found Boost: ${Boost_INCLUDE_DIRS} (found version ${Boost_VERSION_STRING})" )
       set( HAVE_BOOST ON PARENT_SCOPE )
-      # Boost uses lower case in variable names
       set( BOOST_FOUND "${Boost_FOUND}" PARENT_SCOPE )
-      set( BOOST_LIBRARIES "${Boost_LIBRARIES}" PARENT_SCOPE )
-      set( BOOST_INCLUDE_DIR "${Boost_INCLUDE_DIRS}" PARENT_SCOPE )
       set( BOOST_VERSION "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}" PARENT_SCOPE )
-
-      include_directories( ${Boost_INCLUDE_DIRS} )
     endif ()
+  endif ()
+
+  # Provide a dummy Boost::headers if Boost is disabled or not found.
+  # Needed to avoid problems where Boost::headers is used unconditionally.
+  if ( NOT TARGET Boost::headers )
+    add_library( Boost::headers INTERFACE IMPORTED )
   endif ()
 endfunction()
 
@@ -579,7 +557,7 @@ function( NEST_PROCESS_WITH_HDF5 )
 
   set( HAVE_HDF5 OFF PARENT_SCOPE )
   if ( with-hdf5 )
-    if ( NOT ${with-hdf5} STREQUAL "ON" )
+    if ( NOT "${with-hdf5}" STREQUAL "ON" )
       # a path is set
       set( HDF5_ROOT "${with-hdf5}" )
     endif ()
@@ -603,9 +581,9 @@ endfunction()
 function( NEST_PROCESS_TARGET_BITS_SPLIT )
   if ( target-bits-split )
     # set to value according to defines in config.h
-    if ( ${target-bits-split} STREQUAL "standard" )
+    if ( "${target-bits-split}" STREQUAL "standard" )
       set( TARGET_BITS_SPLIT 0 PARENT_SCOPE )
-    elseif ( ${target-bits-split} STREQUAL "hpc" )
+    elseif ( "${target-bits-split}" STREQUAL "hpc" )
       set( TARGET_BITS_SPLIT 1 PARENT_SCOPE )
     else()
       printError( "Invalid target-bits-split selected." )
@@ -663,18 +641,17 @@ function( NEST_PROCESS_WITH_MPI4PY )
 endfunction ()
 
 function( NEST_PROCESS_USERDOC )
-  if ( ${with-userdoc} STREQUAL "ON")
+  if ( "${with-userdoc}" STREQUAL "ON" )
     message( STATUS "Configuring user documentation" )
     find_package( Sphinx REQUIRED)
     find_package( Pandoc REQUIRED)
-    set( BUILD_SLI_DOCS ON PARENT_SCOPE )
     set( BUILD_SPHINX_DOCS ON PARENT_SCOPE )
     set( BUILD_DOCS ON PARENT_SCOPE )
   endif ()
 endfunction ()
 
 function( NEST_PROCESS_DEVDOC )
-  if ( ${with-devdoc} STREQUAL "ON" )
+  if ( "${with-devdoc}" STREQUAL "ON" )
     message( STATUS "Configuring developer documentation" )
     find_package( Doxygen REQUIRED dot )
     set( BUILD_DOXYGEN_DOCS ON PARENT_SCOPE )
@@ -683,7 +660,7 @@ function( NEST_PROCESS_DEVDOC )
 endfunction ()
 
 function( NEST_PROCESS_FULL_LOGGING )
-  if ( ${with-full-logging} STREQUAL "ON" )
+  if ( "${with-full-logging}" STREQUAL "ON" )
     message( STATUS "Configuring full logging" )
     set( ENABLE_FULL_LOGGING ON PARENT_SCOPE )
   endif ()

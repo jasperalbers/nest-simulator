@@ -120,10 +120,10 @@ private:
     //! Inter-update interval in ms (acts like a membrane time constant).
     double tau_m_;
 
-    Parameters_(); //!< Sets default parameter values
+    Parameters_();  //!< Sets default parameter values
 
-    void get( DictionaryDatum& ) const;             //!< Store current values in dictionary
-    void set( const DictionaryDatum&, Node* node ); //!< Set values from dictionary
+    void get( DictionaryDatum& ) const;              //!< Store current values in dictionary
+    void set( const DictionaryDatum&, Node* node );  //!< Set values from dictionary
   };
 
   // ----------------------------------------------------------------
@@ -133,13 +133,13 @@ private:
    */
   struct State_
   {
-    size_t y_;               //!< output state: susceptible=0, infected=1, recovered=2
-    double h_;               //!< number of infected presynaptic neurons
-    double last_in_node_id_; //!< node ID of the last spike being received
-    Time t_next_;            //!< time point of next update
-    Time t_last_in_spike_;   //!< time point of last input spike seen
+    size_t y_;                //!< output state: susceptible=0, infected=1, recovered=2
+    double h_;                //!< number of infected presynaptic neurons
+    double last_in_node_id_;  //!< node ID of the last spike being received
+    Time t_next_;             //!< time point of next update
+    Time t_last_in_spike_;    //!< time point of last input spike seen
 
-    State_(); //!< Default initialization
+    State_();  //!< Default initialization
 
     void get( DictionaryDatum&, const Parameters_& ) const;
     void set( const DictionaryDatum&, Node* );
@@ -170,7 +170,7 @@ private:
    */
   struct Variables_
   {
-    RngPtr rng_; //!< random number generator of my own thread
+    RngPtr rng_;  //!< random number generator of my own thread
   };
 
   // Access functions for UniversalDataLogger -------------------------------
@@ -283,12 +283,12 @@ template < class TUpdateFunction >
 inline void
 infection_neuron< TUpdateFunction >::set_status( const DictionaryDatum& d )
 {
-  Parameters_ ptmp = P_; // temporary copy in case of errors
-  ptmp.set( d, this );   // throws if BadProperty
+  Parameters_ ptmp = P_;  // temporary copy in case of errors
+  ptmp.set( d, this );    // throws if BadProperty
   TUpdateFunction update_tmp = update_function_;
-  update_tmp.set( d, this ); // throws if BadProperty
-  State_ stmp = S_;          // temporary copy in case of errors
-  stmp.set( d, this );       // throws if BadProperty
+  update_tmp.set( d, this );  // throws if BadProperty
+  State_ stmp = S_;           // temporary copy in case of errors
+  stmp.set( d, this );        // throws if BadProperty
 
   // We now know that all temporary properties are internally consistent. Do
   // not write them back before the parent properties have also been checked.
@@ -308,7 +308,7 @@ RecordablesMap< nest::infection_neuron< TUpdateFunction > > nest::infection_neur
 
 template < class TUpdateFunction >
 infection_neuron< TUpdateFunction >::Parameters_::Parameters_()
-  : tau_m_( 10.0 ) // ms
+  : tau_m_( 10.0 )  // ms
 {
   recordablesMap_.create();
 }
@@ -318,8 +318,8 @@ infection_neuron< TUpdateFunction >::State_::State_()
   : y_( 0 )
   , h_( 0.0 )
   , last_in_node_id_( 0 )
-  , t_next_( Time::neg_inf() )          // mark as not initialized
-  , t_last_in_spike_( Time::neg_inf() ) // mark as not initialized
+  , t_next_( Time::neg_inf() )           // mark as not initialized
+  , t_last_in_spike_( Time::neg_inf() )  // mark as not initialized
 {
 }
 
@@ -349,8 +349,8 @@ template < class TUpdateFunction >
 void
 infection_neuron< TUpdateFunction >::State_::get( DictionaryDatum& d, const Parameters_& ) const
 {
-  def< double >( d, names::h, h_ ); // summed input
-  def< double >( d, names::S, y_ ); // infection-neuron output state
+  def< double >( d, names::h, h_ );  // summed input
+  def< double >( d, names::S, y_ );  // infection-neuron output state
 }
 
 template < class TUpdateFunction >
@@ -406,8 +406,8 @@ template < class TUpdateFunction >
 void
 infection_neuron< TUpdateFunction >::init_buffers_()
 {
-  B_.spikes_.clear();   // includes resize
-  B_.currents_.clear(); // includes resize
+  B_.spikes_.clear();    // includes resize
+  B_.currents_.clear();  // includes resize
   B_.logger_.reset();
   ArchivingNode::clear_history();
 }
@@ -486,7 +486,7 @@ infection_neuron< TUpdateFunction >::handle( SpikeEvent& e )
 
   if ( m == 1 )
   {
-    if ( node_id == S_.last_in_node_id_ && t_spike == S_.t_last_in_spike_ )
+    if ( node_id == S_.last_in_node_id_ and t_spike == S_.t_last_in_spike_ )
     {
       B_.spikes_.add_value(
         e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), -2.0 * e.get_weight() );
@@ -534,6 +534,6 @@ infection_neuron< TUpdateFunction >::calibrate_time( const TimeConverter& tc )
   S_.t_last_in_spike_ = tc.from_old_tics( S_.t_last_in_spike_.get_tics() );
 }
 
-} // namespace nest
+}  // namespace nest
 
 #endif /* #ifndef INFECTION_NEURON_H */

@@ -24,7 +24,8 @@ Example of the tsodyks2_synapse in NEST
 ---------------------------------------
 
 This synapse model implements synaptic short-term depression and short-term f
-according to [1]_ and [2]_. It solves Eq (2) from [1]_ and modulates U according
+according to :footcite:p:`Tsodyks1997` and :footcite:p:`Fuhrmann2002`. It solves
+Eq (2) from :footcite:p:`Tsodyks1997` and modulates U according
 
 This connection merely scales the synaptic weight, based on the spike history
 parameters of the kinetic model. Thus, it is suitable for any type of synapse
@@ -34,7 +35,7 @@ The parameter `A_se` from the publications is represented by the
 synaptic weight. The variable `x` in the synapse properties is the
 factor that scales the synaptic weight.
 
-See also [3]_.
+See also :footcite:p:`Maass2002`.
 
 Parameters
 ~~~~~~~~~~
@@ -59,25 +60,16 @@ This compares the two synapse models.
 References
 ~~~~~~~~~~
 
-.. [1] Tsodyks MV, and Markram H. (1997). The neural code between
-       neocortical depends on neurotransmitter release probability. PNAS,
-       94(2), 719-23.
-.. [2] Fuhrmann G, Segev I, Markram H, and Tsodyks MV. (2002). Coding of
-       temporal information by activity-dependent synapses. Journal of
-       Neurophysiology, 8. https://doi.org/10.1152/jn.00258.2001
-.. [3] Maass W, and Markram H. (2002). Synapses as dynamic memory buffers.
-       Neural Networks, 15(2), 155-161.
-       http://dx.doi.org/10.1016/S0893-6080(01)00144-7
+.. footbibliography::
 """
 
 import matplotlib.pyplot as plt
 import nest
 import nest.voltage_trace
 
-nest.ResetKernel()
-
 ###############################################################################
 # Parameter set for depression
+# tau_fac == 0 disables facilitation
 
 dep_params = {"U": 0.67, "u": 0.67, "x": 1.0, "tau_rec": 450.0, "tau_fac": 0.0, "weight": 250.0}
 
@@ -87,50 +79,57 @@ dep_params = {"U": 0.67, "u": 0.67, "x": 1.0, "tau_rec": 450.0, "tau_fac": 0.0, 
 fac_params = {"U": 0.1, "u": 0.1, "x": 1.0, "tau_fac": 1000.0, "tau_rec": 100.0, "weight": 250.0}
 
 ###############################################################################
-# Now we assign the parameter set to the synapse models.
+# Run the example for each parameter set
 
-tsodyks_params = dict(fac_params, synapse_model="tsodyks_synapse")  # for tsodyks_synapse
-tsodyks2_params = dict(fac_params, synapse_model="tsodyks2_synapse")  # for tsodyks2_synapse
+for experiment_name, syn_params in zip(("Depression", "Facilitation"), (dep_params, fac_params)):
+    nest.ResetKernel()
 
-###############################################################################
-# Create three neurons.
+    ###############################################################################
+    # Assign the parameter set to the synapse models.
 
-neuron = nest.Create("iaf_psc_exp", 3, params={"tau_syn_ex": 3.0})
+    tsodyks_params = dict(syn_params, synapse_model="tsodyks_synapse")  # for tsodyks_synapse
+    tsodyks2_params = dict(syn_params, synapse_model="tsodyks2_synapse")  # for tsodyks2_synapse
 
-###############################################################################
-# Neuron one produces spikes. Neurons 2 and 3 receive the spikes via the two
-# synapse models.
+    ###############################################################################
+    # Create three neurons.
 
-nest.Connect(neuron[0], neuron[1], syn_spec=tsodyks_params)
-nest.Connect(neuron[0], neuron[2], syn_spec=tsodyks2_params)
+    neuron = nest.Create("iaf_psc_exp", 3, params={"tau_syn_ex": 3.0})
 
-###############################################################################
-# Now create two voltmeters to record the responses.
+    ###############################################################################
+    # Neuron one produces spikes. Neurons 2 and 3 receive the spikes via the two
+    # synapse models.
 
-voltmeter = nest.Create("voltmeter", 2)
+    nest.Connect(neuron[0], neuron[1], syn_spec=tsodyks_params)
+    nest.Connect(neuron[0], neuron[2], syn_spec=tsodyks2_params)
 
-###############################################################################
-# Connect the voltmeters to the neurons.
+    ###############################################################################
+    # Now create two voltmeters to record the responses.
 
-nest.Connect(voltmeter[0], neuron[1])
-nest.Connect(voltmeter[1], neuron[2])
+    voltmeter = nest.Create("voltmeter", 2)
 
-###############################################################################
-# Now simulate the standard STP protocol: a burst of spikes, followed by a
-# pause and a recovery response.
+    ###############################################################################
+    # Connect the voltmeters to the neurons.
 
-neuron[0].I_e = 376.0
+    nest.Connect(voltmeter[0], neuron[1])
+    nest.Connect(voltmeter[1], neuron[2])
 
-nest.Simulate(500.0)
-neuron[0].I_e = 0.0
-nest.Simulate(500.0)
-neuron[0].I_e = 376.0
-nest.Simulate(500.0)
+    ###############################################################################
+    # Now simulate the standard STP protocol: a burst of spikes, followed by a
+    # pause and a recovery response.
 
-###############################################################################
-# Finally, generate voltage traces. Both are shown in the same plot and
-# should be almost completely overlapping.
+    neuron[0].I_e = 376.0
 
-nest.voltage_trace.from_device(voltmeter[0])
-nest.voltage_trace.from_device(voltmeter[1])
-plt.show()
+    nest.Simulate(500.0)
+    neuron[0].I_e = 0.0
+    nest.Simulate(500.0)
+    neuron[0].I_e = 376.0
+    nest.Simulate(500.0)
+
+    ###############################################################################
+    # Finally, generate voltage traces. Both are shown in the same plot and
+    # should be almost completely overlapping.
+
+    nest.voltage_trace.from_device(voltmeter[0])
+    nest.voltage_trace.from_device(voltmeter[1])
+    plt.suptitle(experiment_name + " experiment")
+    plt.show()

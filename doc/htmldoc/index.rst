@@ -22,6 +22,12 @@ Welcome to the NEST Simulator documentation!
           ranging from algorithmically determined connections to data-driven connectivity.
           Create connections between neurons using numerous synapse models from STDP to gap junctions.
 
+          To get started you can:
+
+          ``pip install nest-simulator``
+
+          see :ref:`here <install_nest>` for all installation options!
+
 
        .. grid-item::
 
@@ -46,31 +52,33 @@ Welcome to the NEST Simulator documentation!
               :data-bs-ride: carousel
 
                 .. figure:: static/img/network_model_sketch_mesocircuit.png
+                  :target: networks/index.html
 
-
-                  Create spatially structured networks
-
+                  Create large network models
 
                 .. figure:: static/img/astrocyte_interaction.png
-
+                  :target: auto_examples/astrocytes/index.html
 
                   Inspect neuron and astrocyte interactions
 
-
                 .. figure:: static/img/hpc_benchmark_connectivity.svg
-
+                  :target: auto_examples/hpc_benchmark.html
 
                   Test perfomance and benchmarks
 
                 .. figure:: static/img/pong_sim.gif
-
+                  :target: auto_examples/pong/run_simulations.html
 
                   Simulate a game of PONG with NEST
 
-                .. figure:: static/img/gapjunctions.png
+                .. figure:: ../../pynest/examples/eprop_plasticity/eprop_supervised_regression_sine-waves.png
+                  :target: auto_examples/eprop_plasticity/index.html
 
+                  Explore eligibility propagation plasticity
+      .. grid-item-card:: Discrete state neurons
+           :img-top: ../static/img/nest_logo-faded.png
 
-                  Explore synapse types like gap junctions
+           * :doc:`Susceptible (S), Infected (I), Recovered (R) model of the spread of disease <../auto_examples/sir_neuron>`
 
        .. grid-item::
 
@@ -124,7 +132,7 @@ How NEST works --- The Big Picture
    Models <models/index>
    Python API <ref_material/pynest_api/index>
    ref_material/glossary
-   benchmark_results
+   NEST performance results <https://performance-benchmarks.readthedocs.io/en/latest>
    Cite NEST <citing-nest>
    License <license>
 
