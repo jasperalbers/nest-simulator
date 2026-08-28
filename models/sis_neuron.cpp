@@ -55,13 +55,13 @@ void
 sis_update_function::set( const DictionaryDatum& d, Node* node )
 {
   updateValueParam< double >( d, names::beta_sis, beta_sis_, node );
-  if ( beta_sis_ < 0 || beta_sis_ > 1 )
+  if ( beta_sis_ < 0 or beta_sis_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
 
   updateValueParam< double >( d, names::mu_sis, mu_sis_, node );
-  if ( mu_sis_ < 0 || mu_sis_ > 1 )
+  if ( mu_sis_ < 0 or mu_sis_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }

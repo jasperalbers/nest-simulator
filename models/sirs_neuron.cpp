@@ -57,19 +57,19 @@ void
 sirs_update_function::set( const DictionaryDatum& d, Node* node )
 {
   updateValueParam< double >( d, names::beta_sirs, beta_sirs_, node );
-  if ( beta_sirs_ < 0 || beta_sirs_ > 1 )
+  if ( beta_sirs_ < 0 or beta_sirs_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
 
   updateValueParam< double >( d, names::mu_sirs, mu_sirs_, node );
-  if ( mu_sirs_ < 0 || mu_sirs_ > 1 )
+  if ( mu_sirs_ < 0 or mu_sirs_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
 
   updateValueParam< double >( d, names::eta_sirs, eta_sirs_, node );
-  if ( eta_sirs_ < 0 || eta_sirs_ > 1 )
+  if ( eta_sirs_ < 0 or eta_sirs_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
