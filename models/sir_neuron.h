@@ -23,17 +23,8 @@
 #ifndef SIR_NEURON_H
 #define SIR_NEURON_H
 
-// Generated includes:
-#include "config.h"
-
-// Includes from nestkernel:
-#include "archiving_node.h"
-#include "connection.h"
-#include "event.h"
-#include "nest_types.h"
-#include "recordables_map.h"
-#include "ring_buffer.h"
-#include "universal_data_logger.h"
+// Includes from models:
+#include "infection_neuron.h"
 
 namespace nest
 {
@@ -146,156 +137,61 @@ EndUserDocs */
  * @see sirs_neuron
  */
 
-void register_sir_neuron( const std::string& name );
-
-class sir_neuron : public ArchivingNode
+class sir_update_function
 {
+private:
+  double beta_sir_; //!< transition probability S->I
+  double mu_sir_;   //!< transition probability I->R
 
 public:
-  sir_neuron();
-  sir_neuron( const sir_neuron& );
+  sir_update_function();
 
-  /**
-   * Import sets of overloaded virtual functions.
-   * @see Technical Issues / Virtual Functions: Overriding, Overloading, and
-   * Hiding
-   */
-  using Node::handle;
-  using Node::handles_test_event;
-  using Node::receives_signal;
-  using Node::sends_signal;
+  void get( DictionaryDatum& ) const;
+  void set( const DictionaryDatum&, Node* node );
 
-  size_t send_test_event( Node&, size_t, synindex, bool );
-
-  void handle( SpikeEvent& );
-  void handle( CurrentEvent& );
-  void handle( DataLoggingRequest& );
-
-  size_t handles_test_event( SpikeEvent&, size_t );
-  size_t handles_test_event( CurrentEvent&, size_t );
-  size_t handles_test_event( DataLoggingRequest&, size_t );
-
-  SignalType sends_signal() const;
-  SignalType receives_signal() const;
-
-  void get_status( DictionaryDatum& ) const;
-  void set_status( const DictionaryDatum& );
-
-  void calibrate_time( const TimeConverter& tc );
-
-
-private:
-  void init_buffers_();
-  void pre_run_hook();
-
-  void update( Time const&, const long, const long );
-
-  // The next two classes need to be friends to access the State_ class/member
-  friend class RecordablesMap< sir_neuron >;
-  friend class UniversalDataLogger< sir_neuron >;
-
-  // ----------------------------------------------------------------
-
-  /**
-   * Independent parameters of the model.
-   */
-  struct Parameters_
-  {
-    //! mean inter-update interval in ms (acts like a membrane time constant).
-    double tau_m_;
-    //! transition probability S->I
-    double beta_sir_;
-    //! transition probability I->R
-    double mu_sir_;
-
-
-    Parameters_(); //!< Sets default parameter values
-
-    void get( DictionaryDatum& ) const;             //!< Store current values in dictionary
-    void set( const DictionaryDatum&, Node* node ); //!< Set values from dicitonary
-  };
-
-  // ----------------------------------------------------------------
-
-  /**
-   * State variables of the model.
-   */
-  struct State_
-  {
-    size_t y_;               //!< output of neuron in [0,1,2]
-    double h_;               //!< total input current to neuron
-    double last_in_node_id_; //!< node ID of the last spike being received
-    Time t_next_;            //!< time point of next update
-    Time t_last_in_spike_;   //!< time point of last input spike seen
-
-    State_(); //!< Default initialization
-
-    void get( DictionaryDatum&, const Parameters_& ) const;
-    void set( const DictionaryDatum&, Node* );
-  };
-
-  // ----------------------------------------------------------------
-
-  /**
-   * Buffers of the model.
-   */
-  struct Buffers_
-  {
-    Buffers_( sir_neuron& );
-    Buffers_( const Buffers_&, sir_neuron& );
-
-    /** buffers and sums up incoming spikes/currents */
-    RingBuffer spikes_;
-    RingBuffer currents_;
-
-
-    //! Logger for all analog data
-    UniversalDataLogger< sir_neuron > logger_;
-  };
-
-  // ----------------------------------------------------------------
-
-  /**
-   * Internal variables of the model.
-   */
-  struct Variables_
-  {
-    RngPtr rng_; //!< random number generator of my own thread
-  };
-
-  // Access functions for UniversalDataLogger -------------------------------
-
-  //! Read out the sir_neuron state of the neuron
-  double
-  get_output_state_() const
-  {
-    return S_.y_;
-  }
-
-  //! Read out the summed input of the neuron (= membrane potential)
-  double
-  get_input__() const
-  {
-    return S_.h_;
-  }
-
-  // ----------------------------------------------------------------
-
-  /**
-   * Instances of private data structures for the different types
-   * of data pertaining to the model.
-   * @note The order of definitions is important for speed.
-   * @{
-   */
-  Parameters_ P_;
-  State_ S_;
-  Variables_ V_;
-  Buffers_ B_;
-  /** @} */
-
-  //! Mapping of recordables names to access functions
-  static RecordablesMap< sir_neuron > recordablesMap_;
+  size_t operator()( RngPtr, size_t old_state, double h ) const;
+  size_t get_event_multiplicity( size_t new_state ) const;
 };
+
+inline size_t
+sir_update_function::operator()( RngPtr rng, size_t old_state, double h ) const
+{
+  size_t new_state = 0;
+
+  if ( old_state == 0 ) // neuron is susceptible
+  {
+    new_state = 0;
+    if ( rng->drand() < beta_sir_ * h )
+    {
+      new_state = 1; // neuron gets infected
+    }
+  }
+
+  if ( old_state == 1 ) // neuron is infected
+  {
+    new_state = 1;
+    if ( rng->drand() < mu_sir_ )
+    {
+      new_state = 2; // neuron recovers
+    }
+  }
+
+  if ( old_state == 2 ) // neuron is recovered
+  {
+    new_state = 2;
+  }
+
+  return new_state;
+}
+
+inline size_t
+sir_update_function::get_event_multiplicity( size_t new_state ) const
+{
+  return new_state == 2 ? 2 : 1;
+}
+
+typedef infection_neuron< sir_update_function > sir_neuron;
+void register_sir_neuron( const std::string& name );
 
 template <>
 void RecordablesMap< sir_neuron >::create();
