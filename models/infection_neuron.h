@@ -42,10 +42,6 @@
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
 
-// Includes from sli:
-#include "dict.h"
-#include "dictutils.h"
-
 namespace nest
 {
 
@@ -56,8 +52,8 @@ namespace nest
  * status-dictionary entries, state transition, and event multiplicity. It must
  * provide the following interface:
  *
- *   void get( DictionaryDatum& ) const;
- *   void set( const DictionaryDatum&, Node* );
+ *   void get( Dictionary& ) const;
+ *   void set( const Dictionary&, Node* );
  *   size_t operator()( RngPtr, size_t old_state, double h ) const;
  *   size_t get_event_multiplicity( size_t new_state ) const;
  *
@@ -94,8 +90,8 @@ public:
   SignalType sends_signal() const override;
   SignalType receives_signal() const override;
 
-  void get_status( DictionaryDatum& ) const override;
-  void set_status( const DictionaryDatum& ) override;
+  void get_status( Dictionary& ) const override;
+  void set_status( const Dictionary& ) override;
 
   void calibrate_time( const TimeConverter& tc ) override;
 
@@ -122,8 +118,8 @@ private:
 
     Parameters_();  //!< Sets default parameter values
 
-    void get( DictionaryDatum& ) const;              //!< Store current values in dictionary
-    void set( const DictionaryDatum&, Node* node );  //!< Set values from dictionary
+    void get( Dictionary& ) const;              //!< Store current values in dictionary
+    void set( const Dictionary&, Node* node );  //!< Set values from dictionary
   };
 
   // ----------------------------------------------------------------
@@ -141,8 +137,8 @@ private:
 
     State_();  //!< Default initialization
 
-    void get( DictionaryDatum&, const Parameters_& ) const;
-    void set( const DictionaryDatum&, Node* );
+    void get( Dictionary&, const Parameters_& ) const;
+    void set( const Dictionary&, Node* );
   };
 
   // ----------------------------------------------------------------
@@ -270,18 +266,18 @@ infection_neuron< TUpdateFunction >::receives_signal() const
 
 template < class TUpdateFunction >
 inline void
-infection_neuron< TUpdateFunction >::get_status( DictionaryDatum& d ) const
+infection_neuron< TUpdateFunction >::get_status( Dictionary& d ) const
 {
   P_.get( d );
   update_function_.get( d );
   S_.get( d, P_ );
   ArchivingNode::get_status( d );
-  ( *d )[ names::recordables ] = recordablesMap_.get_list();
+  d[ names::recordables ] = recordablesMap_.get_list();
 }
 
 template < class TUpdateFunction >
 inline void
-infection_neuron< TUpdateFunction >::set_status( const DictionaryDatum& d )
+infection_neuron< TUpdateFunction >::set_status( const Dictionary& d )
 {
   Parameters_ ptmp = P_;  // temporary copy in case of errors
   ptmp.set( d, this );    // throws if BadProperty
@@ -329,16 +325,16 @@ infection_neuron< TUpdateFunction >::State_::State_()
 
 template < class TUpdateFunction >
 void
-infection_neuron< TUpdateFunction >::Parameters_::get( DictionaryDatum& d ) const
+infection_neuron< TUpdateFunction >::Parameters_::get( Dictionary& d ) const
 {
-  def< double >( d, names::tau_m, tau_m_ );
+  d[ names::tau_m ] = tau_m_;
 }
 
 template < class TUpdateFunction >
 void
-infection_neuron< TUpdateFunction >::Parameters_::set( const DictionaryDatum& d, Node* node )
+infection_neuron< TUpdateFunction >::Parameters_::set( const Dictionary& d, Node* node )
 {
-  updateValueParam< double >( d, names::tau_m, tau_m_, node );
+  update_value_param( d, names::tau_m, tau_m_, node );
   if ( tau_m_ <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
@@ -347,18 +343,23 @@ infection_neuron< TUpdateFunction >::Parameters_::set( const DictionaryDatum& d,
 
 template < class TUpdateFunction >
 void
-infection_neuron< TUpdateFunction >::State_::get( DictionaryDatum& d, const Parameters_& ) const
+infection_neuron< TUpdateFunction >::State_::get( Dictionary& d, const Parameters_& ) const
 {
-  def< double >( d, names::h, h_ );  // summed input
-  def< double >( d, names::S, y_ );  // infection-neuron output state
+  d[ names::h ] = h_;                         // summed input
+  d[ names::S ] = static_cast< long >( y_ );  // infection-neuron output state
 }
 
 template < class TUpdateFunction >
 void
-infection_neuron< TUpdateFunction >::State_::set( const DictionaryDatum& d, Node* node )
+infection_neuron< TUpdateFunction >::State_::set( const Dictionary& d, Node* node )
 {
-  updateValueParam< double >( d, names::h, h_, node );
-  updateValueParam< double >( d, names::S, y_, node );
+  update_value_param( d, names::h, h_, node );
+
+  long y = static_cast< long >( y_ );
+  if ( update_value_param( d, names::S, y, node ) )
+  {
+    y_ = static_cast< size_t >( y );
+  }
 }
 
 template < class TUpdateFunction >

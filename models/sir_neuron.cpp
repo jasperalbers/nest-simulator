@@ -45,22 +45,22 @@ sir_update_function::sir_update_function()
 }
 
 void
-sir_update_function::get( DictionaryDatum& d ) const
+sir_update_function::get( Dictionary& d ) const
 {
-  def< double >( d, names::beta_sir, beta_sir_ );
-  def< double >( d, names::mu_sir, mu_sir_ );
+  d[ names::beta_sir ] = beta_sir_;
+  d[ names::mu_sir ] = mu_sir_;
 }
 
 void
-sir_update_function::set( const DictionaryDatum& d, Node* node )
+sir_update_function::set( const Dictionary& d, Node* node )
 {
-  updateValueParam< double >( d, names::beta_sir, beta_sir_, node );
+  update_value_param( d, names::beta_sir, beta_sir_, node );
   if ( beta_sir_ < 0 or beta_sir_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
 
-  updateValueParam< double >( d, names::mu_sir, mu_sir_, node );
+  update_value_param( d, names::mu_sir, mu_sir_, node );
   if ( mu_sir_ < 0 or mu_sir_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );

@@ -145,8 +145,8 @@ private:
 public:
   sis_update_function();
 
-  void get( DictionaryDatum& ) const;
-  void set( const DictionaryDatum&, Node* node );
+  void get( Dictionary& ) const;
+  void set( const Dictionary&, Node* node );
 
   size_t operator()( RngPtr, size_t old_state, double h ) const;
   size_t get_event_multiplicity( size_t new_state ) const;

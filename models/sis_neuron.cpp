@@ -45,22 +45,22 @@ sis_update_function::sis_update_function()
 }
 
 void
-sis_update_function::get( DictionaryDatum& d ) const
+sis_update_function::get( Dictionary& d ) const
 {
-  def< double >( d, names::beta_sis, beta_sis_ );
-  def< double >( d, names::mu_sis, mu_sis_ );
+  d[ names::beta_sis ] = beta_sis_;
+  d[ names::mu_sis ] = mu_sis_;
 }
 
 void
-sis_update_function::set( const DictionaryDatum& d, Node* node )
+sis_update_function::set( const Dictionary& d, Node* node )
 {
-  updateValueParam< double >( d, names::beta_sis, beta_sis_, node );
+  update_value_param( d, names::beta_sis, beta_sis_, node );
   if ( beta_sis_ < 0 or beta_sis_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
 
-  updateValueParam< double >( d, names::mu_sis, mu_sis_, node );
+  update_value_param( d, names::mu_sis, mu_sis_, node );
   if ( mu_sis_ < 0 or mu_sis_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );

@@ -46,29 +46,29 @@ sirs_update_function::sirs_update_function()
 }
 
 void
-sirs_update_function::get( DictionaryDatum& d ) const
+sirs_update_function::get( Dictionary& d ) const
 {
-  def< double >( d, names::beta_sirs, beta_sirs_ );
-  def< double >( d, names::mu_sirs, mu_sirs_ );
-  def< double >( d, names::eta_sirs, eta_sirs_ );
+  d[ names::beta_sirs ] = beta_sirs_;
+  d[ names::mu_sirs ] = mu_sirs_;
+  d[ names::eta_sirs ] = eta_sirs_;
 }
 
 void
-sirs_update_function::set( const DictionaryDatum& d, Node* node )
+sirs_update_function::set( const Dictionary& d, Node* node )
 {
-  updateValueParam< double >( d, names::beta_sirs, beta_sirs_, node );
+  update_value_param( d, names::beta_sirs, beta_sirs_, node );
   if ( beta_sirs_ < 0 or beta_sirs_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
 
-  updateValueParam< double >( d, names::mu_sirs, mu_sirs_, node );
+  update_value_param( d, names::mu_sirs, mu_sirs_, node );
   if ( mu_sirs_ < 0 or mu_sirs_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
   }
 
-  updateValueParam< double >( d, names::eta_sirs, eta_sirs_, node );
+  update_value_param( d, names::eta_sirs, eta_sirs_, node );
   if ( eta_sirs_ < 0 or eta_sirs_ > 1 )
   {
     throw BadProperty( "All probabilities must be between 0 and 1." );
