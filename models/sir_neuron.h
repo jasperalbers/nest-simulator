@@ -140,8 +140,8 @@ EndUserDocs */
 class sir_update_function
 {
 private:
-  double beta_sir_; //!< transition probability S->I
-  double mu_sir_;   //!< transition probability I->R
+  double beta_sir_;  //!< transition probability S->I
+  double mu_sir_;    //!< transition probability I->R
 
 public:
   sir_update_function();
@@ -158,25 +158,25 @@ sir_update_function::operator()( RngPtr rng, size_t old_state, double h ) const
 {
   size_t new_state = 0;
 
-  if ( old_state == 0 ) // neuron is susceptible
+  if ( old_state == 0 )  // neuron is susceptible
   {
     new_state = 0;
     if ( rng->drand() < beta_sir_ * h )
     {
-      new_state = 1; // neuron gets infected
+      new_state = 1;  // neuron gets infected
     }
   }
 
-  if ( old_state == 1 ) // neuron is infected
+  if ( old_state == 1 )  // neuron is infected
   {
     new_state = 1;
     if ( rng->drand() < mu_sir_ )
     {
-      new_state = 2; // neuron recovers
+      new_state = 2;  // neuron recovers
     }
   }
 
-  if ( old_state == 2 ) // neuron is recovered
+  if ( old_state == 2 )  // neuron is recovered
   {
     new_state = 2;
   }
@@ -196,6 +196,6 @@ void register_sir_neuron( const std::string& name );
 template <>
 void RecordablesMap< sir_neuron >::create();
 
-} // namespace
+}  // namespace
 
 #endif /* #ifndef SIR_NEURON_H */

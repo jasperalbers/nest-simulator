@@ -139,8 +139,8 @@ EndUserDocs */
 class sis_update_function
 {
 private:
-  double beta_sis_; //!< transition probability S->I
-  double mu_sis_;   //!< transition probability I->S
+  double beta_sis_;  //!< transition probability S->I
+  double mu_sis_;    //!< transition probability I->S
 
 public:
   sis_update_function();
@@ -157,21 +157,21 @@ sis_update_function::operator()( RngPtr rng, size_t old_state, double h ) const
 {
   size_t new_state = 0;
 
-  if ( old_state == 0 ) // neuron is susceptible
+  if ( old_state == 0 )  // neuron is susceptible
   {
     new_state = 0;
     if ( rng->drand() < beta_sis_ * h )
     {
-      new_state = 1; // neuron gets infected
+      new_state = 1;  // neuron gets infected
     }
   }
 
-  if ( old_state == 1 ) // neuron is infected
+  if ( old_state == 1 )  // neuron is infected
   {
     new_state = 1;
     if ( rng->drand() < mu_sis_ )
     {
-      new_state = 0; // neuron becomes susceptible
+      new_state = 0;  // neuron becomes susceptible
     }
   }
 
@@ -190,6 +190,6 @@ void register_sis_neuron( const std::string& name );
 template <>
 void RecordablesMap< sis_neuron >::create();
 
-} // namespace
+}  // namespace
 
 #endif /* #ifndef SIS_NEURON_H */

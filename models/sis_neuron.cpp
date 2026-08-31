@@ -75,4 +75,4 @@ RecordablesMap< nest::sis_neuron >::create()
   insert_( names::h, &nest::sis_neuron::get_input__ );
 }
 
-} // namespace nest
+}  // namespace nest
